@@ -39,10 +39,10 @@
             ]
         },
         {
-            "name": "点击连接",
-            "entry": "ClickWuwaConnect",
+            "name": "点击连接并打开菜单",
+            "entry": "LoginAndOpenMenu",
             "default_check": true,
-            "description": "连接到嵌套 labwc 的 socket（如 wayland-0）后运行，用 WlRoots 截图在底部区域识别“点击连接”，再通过嵌套 Xwayland 的 XTest 点击底部中央。固定坐标点击有效时推荐使用此任务。",
+            "description": "连接到嵌套 labwc 的 socket（如 wayland-0）后运行：自动判断当前在登录页、加载中、游戏内或菜单页；需要时点击连接，进入游戏后通过 XTest 按 Esc 打开菜单并验证菜单锚点。",
             "controller": [
                 "labwc"
             ]
@@ -52,6 +52,15 @@
             "entry": "ClickWuwaConnectFixed",
             "default_check": false,
             "description": "不做图片识别，直接通过嵌套 Xwayland 的 XTest 点击 1280x720 画面底部中央登录按钮。",
+            "controller": [
+                "labwc"
+            ]
+        },
+        {
+            "name": "打开菜单（调试）",
+            "entry": "OpenWuwaMenuOnly",
+            "default_check": false,
+            "description": "游戏内直接通过嵌套 Xwayland 的 XTest 发送 Escape，并验证菜单锚点是否出现。",
             "controller": [
                 "labwc"
             ]

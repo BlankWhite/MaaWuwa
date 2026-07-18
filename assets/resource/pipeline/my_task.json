@@ -10,6 +10,17 @@
         "detach": true,
         "post_delay": 3000
     },
+    "LoginAndOpenMenu": {
+        "recognition": "DirectHit",
+        "timeout": 120000,
+        "rate_limit": 1000,
+        "next": [
+            "CheckWuwaMenuOpened",
+            "WaitWuwaInGame",
+            "ClickWuwaConnect"
+        ],
+        "on_error": "OpenWuwaMenu"
+    },
     "ClickWuwaConnect": {
         "recognition": "TemplateMatch",
         "template": "wuwa_connect.png",
@@ -27,8 +38,58 @@
             "675"
         ],
         "pre_wait_freezes": 500,
+        "post_delay": 5000,
+        "timeout": 120000,
+        "next": "WaitWuwaInGame"
+    },
+    "WaitWuwaInGame": {
+        "recognition": "TemplateMatch",
+        "template": "wuwa_ingame_anchor.png",
+        "roi": [
+            1183,
+            54,
+            26,
+            18
+        ],
+        "threshold": 0.65,
+        "pre_wait_freezes": 1500,
+        "post_delay": 500,
+        "timeout": 90000,
+        "next": "OpenWuwaMenu",
+        "on_error": "OpenWuwaMenuAgain"
+    },
+    "OpenWuwaMenu": {
+        "recognition": "DirectHit",
+        "action": "Command",
+        "exec": "/home/shulk/src/MaaWuwa/tools/x11_key.sh",
+        "args": [
+            "Escape"
+        ],
+        "post_delay": 1000,
+        "next": "CheckWuwaMenuOpened"
+    },
+    "CheckWuwaMenuOpened": {
+        "recognition": "TemplateMatch",
+        "template": "wuwa_menu_anchor.png",
+        "threshold": 0.8,
+        "timeout": 5000,
+        "on_error": "OpenWuwaMenuAgain"
+    },
+    "OpenWuwaMenuAgain": {
+        "recognition": "DirectHit",
+        "action": "Command",
+        "exec": "/home/shulk/src/MaaWuwa/tools/x11_key.sh",
+        "args": [
+            "Escape"
+        ],
         "post_delay": 3000,
-        "timeout": 120000
+        "next": "CheckWuwaMenuOpenedFinal"
+    },
+    "CheckWuwaMenuOpenedFinal": {
+        "recognition": "TemplateMatch",
+        "template": "wuwa_menu_anchor.png",
+        "threshold": 0.8,
+        "timeout": 10000
     },
     "ClickWuwaConnectFixed": {
         "recognition": "DirectHit",
@@ -39,5 +100,15 @@
             "675"
         ],
         "post_delay": 3000
+    },
+    "OpenWuwaMenuOnly": {
+        "recognition": "DirectHit",
+        "action": "Command",
+        "exec": "/home/shulk/src/MaaWuwa/tools/x11_key.sh",
+        "args": [
+            "Escape"
+        ],
+        "post_delay": 1000,
+        "next": "CheckWuwaMenuOpened"
     }
 }
