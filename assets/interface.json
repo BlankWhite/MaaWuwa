@@ -39,10 +39,10 @@
             ]
         },
         {
-            "name": "点击连接并打开菜单",
+            "name": "点击连接并领取索拉指南",
             "entry": "LoginAndOpenMenu",
             "default_check": true,
-            "description": "连接到嵌套 labwc 的 socket（如 wayland-0）后运行：自动判断当前在登录页、加载中、游戏内或菜单页；需要时点击连接，进入游戏后通过 XTest 按 Esc 打开菜单并验证菜单锚点。",
+            "description": "连接到嵌套 labwc 的 socket（如 wayland-0）后运行：自动判断当前在登录页、加载中、游戏内或菜单页；需要时点击连接，进入游戏后按 Esc 打开菜单，点击索拉指南并领取奖励。",
             "controller": [
                 "labwc"
             ]
@@ -61,6 +61,15 @@
             "entry": "OpenWuwaMenuOnly",
             "default_check": false,
             "description": "游戏内直接通过嵌套 Xwayland 的 XTest 发送 Escape，并验证菜单锚点是否出现。",
+            "controller": [
+                "labwc"
+            ]
+        },
+        {
+            "name": "领取索拉指南（调试）",
+            "entry": "ClaimSolaGuideDebug",
+            "default_check": false,
+            "description": "菜单页或索拉指南页均可运行：若已看到“领取”则直接点击，否则先点击索拉指南，再识别“领取”按钮并点击。",
             "controller": [
                 "labwc"
             ]
