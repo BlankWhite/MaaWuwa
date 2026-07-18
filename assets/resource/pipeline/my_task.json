@@ -1,12 +1,43 @@
 {
-    "MyTask1": {},
-    "MyTask2": {},
-    "MyTask3": {},
-    "MyTask4": {
-        "recognition": "Custom",
-        "custom_recognition": "my_reco_222",
-        "action": "Custom",
-        "custom_action": "my_action_111"
+    "LaunchWuwaLabwc": {
+        "recognition": "DirectHit",
+        "action": "Command",
+        "exec": "/bin/bash",
+        "args": [
+            "-lc",
+            "/home/shulk/sh/labwc-wuwa.sh >/tmp/maawuwa-labwc.log 2>&1"
+        ],
+        "detach": true,
+        "post_delay": 3000
     },
-    "OcrTask": {}
+    "ClickWuwaConnect": {
+        "recognition": "TemplateMatch",
+        "template": "wuwa_connect.png",
+        "roi": [
+            450,
+            620,
+            380,
+            90
+        ],
+        "threshold": 0.75,
+        "action": "Command",
+        "exec": "/home/shulk/src/MaaWuwa/tools/x11_click.sh",
+        "args": [
+            "640",
+            "675"
+        ],
+        "pre_wait_freezes": 500,
+        "post_delay": 3000,
+        "timeout": 120000
+    },
+    "ClickWuwaConnectFixed": {
+        "recognition": "DirectHit",
+        "action": "Command",
+        "exec": "/home/shulk/src/MaaWuwa/tools/x11_click.sh",
+        "args": [
+            "640",
+            "675"
+        ],
+        "post_delay": 3000
+    }
 }
