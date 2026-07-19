@@ -1,0 +1,75 @@
+{
+    "durationSeconds": 120,
+    "loopDelayMilliseconds": 80,
+    "noEnemyFramesToFinish": 10,
+    "noEnemyFinishMilliseconds": 2000,
+    "lockTargetIntervalMilliseconds": 500,
+    "switchIntervalMilliseconds": 8000,
+    "normalAttackHoldMilliseconds": 250,
+    "frameWidth": 1280,
+    "frameHeight": 720,
+    "enableDebugCapture": false,
+    "debugDirectory": "debug/auto-combat",
+    "team": [
+        "Character1",
+        "Character2",
+        "Character3"
+    ],
+    "recognition": {
+        "enemyHealthRoi": {
+            "x": 100,
+            "y": 80,
+            "width": 1080,
+            "height": 320
+        },
+        "bossHealthRoi": {
+            "x": 250,
+            "y": 20,
+            "width": 780,
+            "height": 90
+        },
+        "resonanceRoi": {
+            "x": 930,
+            "y": 520,
+            "width": 90,
+            "height": 90
+        },
+        "liberationRoi": {
+            "x": 1030,
+            "y": 455,
+            "width": 90,
+            "height": 90
+        },
+        "echoRoi": {
+            "x": 825,
+            "y": 520,
+            "width": 90,
+            "height": 90
+        },
+        "slot1Roi": {
+            "x": 1160,
+            "y": 175,
+            "width": 90,
+            "height": 60
+        },
+        "slot2Roi": {
+            "x": 1160,
+            "y": 255,
+            "width": 90,
+            "height": 60
+        },
+        "slot3Roi": {
+            "x": 1160,
+            "y": 335,
+            "width": 90,
+            "height": 60
+        },
+        "enemyMinAspectRatio": 3.0,
+        "enemyMinWidth": 20,
+        "enemyMinHeight": 2,
+        "enemyMaxHeight": 14,
+        "skillReadyThreshold": 180,
+        "skillReadyBrightRatio": 0.12,
+        "currentSlotBrightRatio": 0.16
+    }
+}

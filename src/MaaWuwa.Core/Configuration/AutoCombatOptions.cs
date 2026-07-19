@@ -1,0 +1,103 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace MaaWuwa.Core.Configuration;
+
+public sealed record AutoCombatOptions
+{
+    public int DurationSeconds { get; init; } = 120;
+
+    public int LoopDelayMilliseconds { get; init; } = 80;
+
+    public int NoEnemyFramesToFinish { get; init; } = 10;
+
+    public int NoEnemyFinishMilliseconds { get; init; } = 2000;
+
+    public int LockTargetIntervalMilliseconds { get; init; } = 500;
+
+    public int SwitchIntervalMilliseconds { get; init; } = 8000;
+
+    public int NormalAttackHoldMilliseconds { get; init; } = 250;
+
+    public int FrameWidth { get; init; } = 1280;
+
+    public int FrameHeight { get; init; } = 720;
+
+    public bool EnableDebugCapture { get; init; }
+
+    public string DebugDirectory { get; init; } = "debug/auto-combat";
+
+    public IReadOnlyList<string> Team { get; init; } = ["Character1", "Character2", "Character3"];
+
+    public RecognitionOptions Recognition { get; init; } = new();
+
+    public static AutoCombatOptions Load(string? explicitPath = null)
+    {
+        foreach (var path in EnumerateCandidatePaths(explicitPath))
+        {
+            if (!File.Exists(path))
+            {
+                continue;
+            }
+
+            var json = File.ReadAllText(path);
+            return JsonSerializer.Deserialize(json, AutoCombatJsonContext.Default.AutoCombatOptions) ?? new AutoCombatOptions();
+        }
+
+        return new AutoCombatOptions();
+    }
+
+    private static IEnumerable<string> EnumerateCandidatePaths(string? explicitPath)
+    {
+        if (!string.IsNullOrWhiteSpace(explicitPath))
+        {
+            yield return Path.GetFullPath(explicitPath);
+        }
+
+        yield return Path.GetFullPath("assets/resource/config/auto_combat.json");
+        yield return Path.GetFullPath("resource/config/auto_combat.json");
+        yield return Path.GetFullPath("config/auto_combat.json");
+        yield return Path.GetFullPath("auto_combat.json");
+    }
+}
+
+public sealed record RecognitionOptions
+{
+    public RectOptions EnemyHealthRoi { get; init; } = new() { X = 100, Y = 80, Width = 1080, Height = 320 };
+
+    public RectOptions BossHealthRoi { get; init; } = new() { X = 250, Y = 20, Width = 780, Height = 90 };
+
+    public RectOptions ResonanceRoi { get; init; } = new() { X = 930, Y = 520, Width = 90, Height = 90 };
+
+    public RectOptions LiberationRoi { get; init; } = new() { X = 1030, Y = 455, Width = 90, Height = 90 };
+
+    public RectOptions EchoRoi { get; init; } = new() { X = 825, Y = 520, Width = 90, Height = 90 };
+
+    public RectOptions Slot1Roi { get; init; } = new() { X = 1160, Y = 175, Width = 90, Height = 60 };
+
+    public RectOptions Slot2Roi { get; init; } = new() { X = 1160, Y = 255, Width = 90, Height = 60 };
+
+    public RectOptions Slot3Roi { get; init; } = new() { X = 1160, Y = 335, Width = 90, Height = 60 };
+
+    public double EnemyMinAspectRatio { get; init; } = 3.0;
+
+    public int EnemyMinWidth { get; init; } = 20;
+
+    public int EnemyMinHeight { get; init; } = 2;
+
+    public int EnemyMaxHeight { get; init; } = 14;
+
+    public int SkillReadyThreshold { get; init; } = 180;
+
+    public double SkillReadyBrightRatio { get; init; } = 0.12;
+
+    public double CurrentSlotBrightRatio { get; init; } = 0.16;
+}
+
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    ReadCommentHandling = JsonCommentHandling.Skip,
+    AllowTrailingCommas = true,
+    WriteIndented = true)]
+[JsonSerializable(typeof(AutoCombatOptions))]
+public sealed partial class AutoCombatJsonContext : JsonSerializerContext;

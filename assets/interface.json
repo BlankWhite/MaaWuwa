@@ -6,6 +6,13 @@
     "license": "MIT",
     "welcome": "欢迎使用 MaaWuwa。",
     "version": "1.0.0",
+    "agent": {
+        "child_exec": "agent/MaaWuwa.Agent",
+        "child_args": [
+            "--native-dir",
+            "libs/MaaAgentBinary"
+        ]
+    },
     "controller": [
         {
             "name": "labwc",
@@ -70,6 +77,15 @@
             "entry": "ClaimSolaGuideDebug",
             "default_check": false,
             "description": "菜单页或索拉指南页均可运行：若已看到“领取”则直接点击，否则先点击索拉指南，再识别“领取”按钮并点击。",
+            "controller": [
+                "labwc"
+            ]
+        },
+        {
+            "name": "自动战斗（第一版/调试）",
+            "entry": "AutoCombat",
+            "default_check": false,
+            "description": "连接到嵌套 labwc 的游戏画面并确认在游戏内后运行：C# Agent 持续截图识别敌人/技能状态，执行通用自动战斗策略。首版仅支持前台可见窗口和固定三人队配置。",
             "controller": [
                 "labwc"
             ]

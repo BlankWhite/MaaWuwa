@@ -451,4 +451,6 @@ install
 tools/ImageCropper/**/*.png
 
 config
+!assets/resource/config/
+!assets/resource/config/auto_combat.json
 debug

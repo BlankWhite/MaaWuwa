@@ -1,43 +1,53 @@
-<!-- markdownlint-disable MD033 MD041 -->
-<p align="center">
-  <img alt="LOGO" src="https://cdn.jsdelivr.net/gh/MaaAssistantArknights/design@main/v1/icons/maa-logo_512x512.png" width="256" height="256" />
-</p>
+# MaaWuwa
 
-<div align="center">
+MaaWuwa 是基于 MaaFramework 的鸣潮自动化资源项目。目前包含：启动/登录/索拉指南领取流程，以及 C#/.NET 10 自动战斗首版。
 
-# MaaPracticeBoilerplate
+## 自动战斗首版
 
-</div>
+实现位置：
 
-本仓库为 [MaaFramework](https://github.com/MaaXYZ/MaaFramework) 所提供的项目模板，开发者可基于此模板直接创建自己的 MaaXXX 项目。
+- `src/MaaWuwa.Core/`：自动战斗状态机、输入抽象、OpenCvSharp 图像识别、角色策略。
+- `src/MaaWuwa.Agent/`：MaaFramework C# Agent，注册 `AutoCombat` 自定义动作。
+- `assets/resource/config/auto_combat.json`：固定三人队、ROI、阈值、超时等配置。
+- `assets/resource/pipeline/my_task.json`：`AutoCombat`/`RunAutoCombat` Maa pipeline 入口。
 
-> **MaaFramework** 是基于图像识别技术、运用 [MAA](https://github.com/MaaAssistantArknights/MaaAssistantArknights) 开发经验去芜存菁、完全重写的新一代自动化黑盒测试框架。
-> 低代码的同时仍拥有高扩展性，旨在打造一款丰富、领先、且实用的开源库，助力开发者轻松编写出更好的黑盒测试程序，并推广普及。
+首版限制：前台可见游戏窗口、固定 1280×720/labwc 画面、固定三人队；仅做敌人血条、技能亮度、当前槽位等基础识别。
 
-## 即刻开始
+## 本地构建
 
-**请不要直接克隆本仓库！你应该通过模板创建自己的项目！**  
+需要 .NET 10 SDK：
 
-请阅读 [如何开发](./docs/zh_cn/develop/how_to_develop.md)。
+```bash
+dotnet build MaaWuwa.sln -c Release
+```
 
-向本模板仓库提交改动前，请阅读 [PR 规范](./docs/zh_cn/develop/pull_request_guidelines.md)。
+Linux 发布 Agent：
 
-## 生态共建
+```bash
+dotnet publish src/MaaWuwa.Agent/MaaWuwa.Agent.csproj -c Release -f net10.0 -r linux-x64 --self-contained false -o install/agent
+```
 
-MAA 正计划建设为一类项目，而非舟的单一软件。
+运行时需要 MaaFramework/MaaAgentBinary 原生库由客户端或 `install/libs/MaaAgentBinary` 提供。
 
-若您的项目依赖于 MaaFramework，我们欢迎您将它命名为 MaaXXX, MXA, MAX 等等。当然，这是许可而不是限制，您也可以自由选择其他与 MAA 无关的名字，完全取决于您自己的想法！
+## 调试配置
 
-同时，我们也非常欢迎您提出 PR，在 [社区项目列表](https://github.com/MaaXYZ/MaaFramework#%E7%A4%BE%E5%8C%BA%E9%A1%B9%E7%9B%AE) 中添加上您的项目！
+编辑：
 
-## 常见问题
+```text
+assets/resource/config/auto_combat.json
+```
 
-请阅读 [常见问题](./docs/zh_cn/develop/faq.md)。
+可设置：
 
-## 鸣谢
+- `team`：固定三人队名称。
+- `durationSeconds`：单次自动战斗最长时长。
+- `enableDebugCapture`：保存截图、敌人 mask 和技能 ROI 到 `debug/auto-combat`。
+- `recognition.*Roi`：敌人血条、Boss 血条、技能、角色槽位 ROI。
 
-本项目由 **[MaaFramework](https://github.com/MaaXYZ/MaaFramework)** 强力驱动！
+## 常用检查
 
-感谢以下开发者对本项目作出的贡献（下面链接改成你自己的项目地址）:
-
-[![Contributors](https://contrib.rocks/image?repo=MaaXYZ/MaaFramework&max=1000)](https://github.com/MaaXYZ/MaaFramework/graphs/contributors)
+```bash
+npm ci
+npx @nekosu/maa-tools check
+python tools/validate_schema.py --schema-dir deps/tools --resource-dirs assets/resource --exclude-dirs assets/resource/announcement --interface-files assets/interface.json
+```

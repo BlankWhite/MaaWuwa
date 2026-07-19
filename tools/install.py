@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import shutil
+import subprocess
 import sys
 
 try:
@@ -134,10 +135,34 @@ def install_chores():
 
 
 def install_agent():
-    shutil.copytree(
-        working_dir / "agent",
-        install_path / "agent",
-        dirs_exist_ok=True,
+    agent_project = working_dir / "src" / "MaaWuwa.Agent" / "MaaWuwa.Agent.csproj"
+    if not agent_project.exists():
+        return
+
+    if os_name == "android":
+        print("Skipping C# agent publish for Android.")
+        return
+
+    output_dir = install_path / "agent"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        [
+            "dotnet",
+            "publish",
+            str(agent_project),
+            "-c",
+            "Release",
+            "-f",
+            "net10.0",
+            "-r",
+            get_dotnet_platform_tag(),
+            "--self-contained",
+            "false",
+            "-o",
+            str(output_dir),
+        ],
+        check=True,
+        cwd=working_dir,
     )
 
 
