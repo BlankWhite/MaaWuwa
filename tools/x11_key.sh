@@ -7,6 +7,8 @@ set -euo pipefail
 #   x11_key.sh Esc
 #   x11_key.sh Return
 #   x11_key.sh Space
+#   x11_key.sh --down w
+#   x11_key.sh --up w
 # Env:
 #   MAAWUWA_DISPLAY=:1         # override Xwayland display
 
@@ -26,12 +28,16 @@ else
     done
 fi
 
-if [[ $# -ne 1 ]]; then
-    echo "Usage: $0 KEY" >&2
+mode="click"
+if [[ $# -eq 2 && ( "$1" == "--down" || "$1" == "--up" ) ]]; then
+    mode="${1#--}"
+    key="$2"
+elif [[ $# -eq 1 ]]; then
+    key="$1"
+else
+    echo "Usage: $0 [--down|--up] KEY" >&2
     exit 2
 fi
-
-key="$1"
 case "${key,,}" in
     esc|escape) key="Escape" ;;
     enter|return) key="Return" ;;
@@ -41,7 +47,7 @@ esac
 HELPER="${TMPDIR:-/tmp}/maawuwa-x11-key"
 SRC="${TMPDIR:-/tmp}/maawuwa-x11-key.c"
 
-if [[ ! -x "$HELPER" ]]; then
+if [[ ! -x "$HELPER" ]] || ! "$HELPER" --version 2>/dev/null | grep -q '^maawuwa-x11-key 2$'; then
     cat >"$SRC" <<'C'
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
@@ -49,14 +55,20 @@ if [[ ! -x "$HELPER" ]]; then
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 int main(int argc, char **argv) {
-    if (argc != 3) {
-        fprintf(stderr, "Usage: %s DISPLAY KEY\n", argv[0]);
+    if (argc == 2 && strcmp(argv[1], "--version") == 0) {
+        puts("maawuwa-x11-key 2");
+        return 0;
+    }
+    if (argc != 4) {
+        fprintf(stderr, "Usage: %s DISPLAY MODE KEY\n", argv[0]);
         return 2;
     }
     const char *display_name = argv[1];
-    const char *key_name = argv[2];
+    const char *mode = argv[2];
+    const char *key_name = argv[3];
 
     Display *dpy = XOpenDisplay(display_name);
     if (!dpy) {
@@ -85,12 +97,26 @@ int main(int argc, char **argv) {
         return 2;
     }
 
-    XTestFakeKeyEvent(dpy, keycode, True, CurrentTime);
-    XFlush(dpy);
-    usleep(80000);
-    XTestFakeKeyEvent(dpy, keycode, False, CurrentTime);
-    XFlush(dpy);
-    usleep(50000);
+    if (strcmp(mode, "down") == 0) {
+        XTestFakeKeyEvent(dpy, keycode, True, CurrentTime);
+        XFlush(dpy);
+        usleep(50000);
+    } else if (strcmp(mode, "up") == 0) {
+        XTestFakeKeyEvent(dpy, keycode, False, CurrentTime);
+        XFlush(dpy);
+        usleep(50000);
+    } else if (strcmp(mode, "click") == 0) {
+        XTestFakeKeyEvent(dpy, keycode, True, CurrentTime);
+        XFlush(dpy);
+        usleep(80000);
+        XTestFakeKeyEvent(dpy, keycode, False, CurrentTime);
+        XFlush(dpy);
+        usleep(50000);
+    } else {
+        fprintf(stderr, "Unknown mode: %s\n", mode);
+        XCloseDisplay(dpy);
+        return 2;
+    }
 
     XCloseDisplay(dpy);
     return 0;
@@ -99,8 +125,8 @@ C
     gcc "$SRC" -o "$HELPER" -lXtst -lX11
 fi
 
-printf '[%s] display=%s key=%q -> %s\n' \
-    "$(date '+%F %T')" "$DISPLAY_NAME" "$1" "$key" \
+printf '[%s] display=%s mode=%s key=%q -> %s\n' \
+    "$(date '+%F %T')" "$DISPLAY_NAME" "$mode" "$key" "$key" \
     >> "${TMPDIR:-/tmp}/maawuwa-x11-key.log"
 
-"$HELPER" "$DISPLAY_NAME" "$key"
+"$HELPER" "$DISPLAY_NAME" "$mode" "$key"

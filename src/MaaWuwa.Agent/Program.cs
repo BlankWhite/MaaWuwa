@@ -1,5 +1,6 @@
 using MaaFramework.Binding;
 using MaaWuwa.Agent.Actions;
+using MaaWuwa.Agent.Actions.Daily;
 
 var socketId = args.LastOrDefault();
 if (string.IsNullOrWhiteSpace(socketId))
@@ -23,6 +24,8 @@ try
         .SetLogDirectory(".cache")
         .Register(new AutoCombatAction())
         .Register(new AutoCombatTickRecognition())
+        .Register(new DailyTickRecognition())
+        .Register(new DebugFInteractTickRecognition())
         .StartUp()
         .Join()
         .ShutDown();

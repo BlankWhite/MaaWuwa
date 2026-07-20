@@ -140,6 +140,36 @@
         "post_delay": 1000,
         "timeout": 15000
     },
+    "DebugStartDomainChallenge": {
+        "recognition": "Custom",
+        "custom_recognition": "DebugFInteractTick",
+        "rate_limit": 500,
+        "timeout": 30000,
+        "next": "DebugStartDomainChallenge"
+    },
+    "DailyTask": {
+        "recognition": "TemplateMatch",
+        "template": "wuwa_ingame_anchor.png",
+        "roi": [
+            1183,
+            54,
+            26,
+            18
+        ],
+        "threshold": 0.65,
+        "timeout": 10000,
+        "next": "RunDailyTask"
+    },
+    "RunDailyTask": {
+        "recognition": "Custom",
+        "custom_recognition": "DailyTick",
+        "custom_recognition_param": {
+            "config": "resource/config/daily.json"
+        },
+        "rate_limit": 500,
+        "timeout": 900000,
+        "next": "RunDailyTask"
+    },
     "AutoCombat": {
         "recognition": "TemplateMatch",
         "template": "wuwa_ingame_anchor.png",

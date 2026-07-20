@@ -82,6 +82,24 @@
             ]
         },
         {
+            "name": "验证 F 开始挑战（副本内调试）",
+            "entry": "DebugStartDomainChallenge",
+            "default_check": false,
+            "description": "进入模拟/凝素等副本房间后运行：每轮先左键触发开始挑战提示，再识别 f_interact.png；找到后按 f。用于单独验证 F 交互，不执行日常和战斗。",
+            "controller": [
+                "labwc"
+            ]
+        },
+        {
+            "name": "自动日常（第一版/调试）",
+            "entry": "DailyTask",
+            "default_check": false,
+            "description": "进入游戏内后运行：C# Agent 读取日常活跃度/已消耗体力，必要时刷模拟领域，随后领取日常、邮件与纪行奖励。首版优先支持 1280x720、模拟领域和固定坐标流程。",
+            "controller": [
+                "labwc"
+            ]
+        },
+        {
             "name": "自动战斗（第一版/调试）",
             "entry": "AutoCombat",
             "default_check": false,
