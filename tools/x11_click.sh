@@ -3,10 +3,12 @@ set -euo pipefail
 
 # Click an X11/Xwayland coordinate using XTest.
 # Usage:
-#   x11_click.sh '[x,y,w,h]'   # clicks center of Maa BOX
-#   x11_click.sh x y           # clicks fixed coordinate
+#   x11_click.sh '[x,y,w,h]'        # clicks center of Maa BOX
+#   x11_click.sh x y                # clicks fixed coordinate
+#   x11_click.sh --down x y         # mouse button down at coordinate
+#   x11_click.sh --up x y           # mouse button up at coordinate
 # Env:
-#   MAAWUWA_DISPLAY=:1         # default Xwayland display
+#   MAAWUWA_DISPLAY=:1              # default Xwayland display
 
 if [[ -n "${MAAWUWA_DISPLAY:-}" ]]; then
     DISPLAY_NAME="$MAAWUWA_DISPLAY"
@@ -23,25 +25,38 @@ else
         fi
     done
 fi
+
+mode="click"
+if [[ $# -ge 1 && ( "$1" == "--down" || "$1" == "--up" ) ]]; then
+    mode="${1#--}"
+    shift
+fi
+
 HELPER="${TMPDIR:-/tmp}/maawuwa-x11-click"
 SRC="${TMPDIR:-/tmp}/maawuwa-x11-click.c"
 
-if [[ ! -x "$HELPER" ]]; then
+if [[ ! -x "$HELPER" ]] || ! "$HELPER" --version 2>/dev/null | grep -q '^maawuwa-x11-click 2$'; then
     cat >"$SRC" <<'C'
 #include <X11/Xlib.h>
 #include <X11/extensions/XTest.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 int main(int argc, char **argv) {
-    if (argc != 4) {
-        fprintf(stderr, "Usage: %s DISPLAY X Y\n", argv[0]);
+    if (argc == 2 && strcmp(argv[1], "--version") == 0) {
+        puts("maawuwa-x11-click 2");
+        return 0;
+    }
+    if (argc != 5) {
+        fprintf(stderr, "Usage: %s DISPLAY MODE X Y\n", argv[0]);
         return 2;
     }
     const char *display_name = argv[1];
-    int x = atoi(argv[2]);
-    int y = atoi(argv[3]);
+    const char *mode = argv[2];
+    int x = atoi(argv[3]);
+    int y = atoi(argv[4]);
 
     Display *dpy = XOpenDisplay(display_name);
     if (!dpy) {
@@ -60,12 +75,27 @@ int main(int argc, char **argv) {
     XWarpPointer(dpy, None, root, 0, 0, 0, 0, x, y);
     XFlush(dpy);
     usleep(50000);
-    XTestFakeButtonEvent(dpy, 1, True, CurrentTime);
-    XFlush(dpy);
-    usleep(120000);
-    XTestFakeButtonEvent(dpy, 1, False, CurrentTime);
-    XFlush(dpy);
-    usleep(50000);
+
+    if (strcmp(mode, "down") == 0) {
+        XTestFakeButtonEvent(dpy, 1, True, CurrentTime);
+        XFlush(dpy);
+        usleep(50000);
+    } else if (strcmp(mode, "up") == 0) {
+        XTestFakeButtonEvent(dpy, 1, False, CurrentTime);
+        XFlush(dpy);
+        usleep(50000);
+    } else if (strcmp(mode, "click") == 0) {
+        XTestFakeButtonEvent(dpy, 1, True, CurrentTime);
+        XFlush(dpy);
+        usleep(120000);
+        XTestFakeButtonEvent(dpy, 1, False, CurrentTime);
+        XFlush(dpy);
+        usleep(50000);
+    } else {
+        fprintf(stderr, "Unknown mode: %s\n", mode);
+        XCloseDisplay(dpy);
+        return 2;
+    }
 
     XCloseDisplay(dpy);
     return 0;
@@ -89,12 +119,12 @@ elif [[ $# -eq 2 ]]; then
     cx="$1"
     cy="$2"
 else
-    echo "Usage: $0 '[x,y,w,h]' OR $0 x y" >&2
+    echo "Usage: $0 [--down|--up] '[x,y,w,h]' OR $0 [--down|--up] x y" >&2
     exit 2
 fi
 
-printf '[%s] display=%s args=%q %q -> click=(%s,%s)\n' \
-    "$(date '+%F %T')" "$DISPLAY_NAME" "${1:-}" "${2:-}" "$cx" "$cy" \
+printf '[%s] display=%s mode=%s args=%q %q -> click=(%s,%s)\n' \
+    "$(date '+%F %T')" "$DISPLAY_NAME" "$mode" "${1:-}" "${2:-}" "$cx" "$cy" \
     >> "${TMPDIR:-/tmp}/maawuwa-x11-click.log"
 
-"$HELPER" "$DISPLAY_NAME" "$cx" "$cy"
+"$HELPER" "$DISPLAY_NAME" "$mode" "$cx" "$cy"

@@ -16,6 +16,16 @@ public sealed record CombatState
 
     public bool ConcertoFull { get; init; }
 
+    public bool ChisaForteFull { get; init; }
+
+    public bool ChisaForteVisible { get; init; }
+
+    public double ChisaForteFullScore { get; init; }
+
+    public double ChisaForteNotFullScore { get; init; }
+
+    public double ConcertoRatio { get; init; }
+
     public int CurrentSlot { get; init; } = -1;
 
     public string? CharacterName { get; init; }

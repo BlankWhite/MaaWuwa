@@ -1,11 +1,12 @@
 {
     "durationSeconds": 120,
     "loopDelayMilliseconds": 80,
-    "noEnemyFramesToFinish": 10,
-    "noEnemyFinishMilliseconds": 2000,
+    "noEnemyFramesToFinish": 4,
+    "noEnemyFinishMilliseconds": 1000,
+    "combatEndOcrMinSeconds": 5,
     "lockTargetIntervalMilliseconds": 500,
-    "switchIntervalMilliseconds": 8000,
-    "normalAttackHoldMilliseconds": 250,
+    "switchIntervalMilliseconds": 6000,
+    "normalAttackHoldMilliseconds": 120,
     "frameWidth": 1280,
     "frameHeight": 720,
     "enableDebugCapture": false,
@@ -13,7 +14,7 @@
     "team": [
         "Character1",
         "Character2",
-        "Character3"
+        "Chisa"
     ],
     "recognition": {
         "enemyHealthRoi": {
@@ -46,6 +47,22 @@
             "width": 90,
             "height": 90
         },
+        "concertoRoi": {
+            "x": 477,
+            "y": 647,
+            "width": 42,
+            "height": 42
+        },
+        "chisaForteRoi": {
+            "x": 537,
+            "y": 651,
+            "width": 205,
+            "height": 25
+        },
+        "chisaForteFullTemplate": "千咲特殊能量条_已满.png",
+        "chisaForteNotFullTemplate": "千咲特殊能量条_未满.png",
+        "chisaForteFullThreshold": 0.92,
+        "chisaForteFullMargin": 0.04,
         "slot1Roi": {
             "x": 1160,
             "y": 175,
@@ -70,6 +87,15 @@
         "enemyMaxHeight": 14,
         "skillReadyThreshold": 180,
         "skillReadyBrightRatio": 0.12,
-        "currentSlotBrightRatio": 0.16
+        "concertoFullRingRatio": 0.32,
+        "currentSlotBrightRatio": 0.16,
+        "combatEndOcrEnabled": true,
+        "combatEndOcrRoi": {
+            "x": 300,
+            "y": 80,
+            "width": 680,
+            "height": 420
+        },
+        "combatEndTextRegex": "挑战成功|战斗胜利|领取奖励|获得奖励|继续挑战|离开|退出|完成|结算|复活|复苏"
     }
 }

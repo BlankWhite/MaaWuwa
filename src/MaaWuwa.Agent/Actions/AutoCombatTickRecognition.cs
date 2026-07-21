@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using MaaFramework.Binding;
 using MaaFramework.Binding.Custom;
 using MaaWuwa.Agent.Maa;
@@ -36,6 +37,7 @@ public sealed class AutoCombatTickRecognition : IMaaCustomRecognition
             var detectorParts = CreateDetectorParts(options);
             var detector = detectorParts.Detector;
             var state = detector.DetectAsync(frame, CancellationToken.None).GetAwaiter().GetResult();
+            Console.WriteLine($"AutoCombatTick state: slot={state.CurrentSlot} char={state.CharacterName ?? "?"} target={state.HasTarget} enemy={state.EnemyFound} con={state.ConcertoFull} conRatio={state.ConcertoRatio:F2} E={state.ResonanceReady} R={state.LiberationReady} Q={state.EchoReady} chisaVisible={state.ChisaForteVisible} chisaFull={state.ChisaForteFull} chisaScore={state.ChisaForteFullScore:F3}/{state.ChisaForteNotFullScore:F3}");
 
             combatContext.CurrentSlot = state.CurrentSlot;
             UpdateEnemyState(combatContext, state);
@@ -46,14 +48,21 @@ public sealed class AutoCombatTickRecognition : IMaaCustomRecognition
                 return Finish(context, args, results, combatContext, "no_enemy");
             }
 
+            if (ShouldCheckCombatEndOcr(combatContext, options) && HasCombatEndText(context, args.Image, options))
+            {
+                return Finish(context, args, results, combatContext, "combat_end_text");
+            }
+
             var input = new MaaGameController(new ContextActionControllerAdapter(context, args.Roi));
             if (!state.HasTarget)
             {
                 TryLockTarget(combatContext, input, options);
+                context.OverrideNext(args.NodeName, [args.NodeName]);
+                return SetResult(results, state, "searching_target");
             }
 
             var generic = new GenericStrategy(options);
-            ICharacterStrategyFactory strategyFactory = new CharacterStrategyFactory([generic], generic);
+            ICharacterStrategyFactory strategyFactory = new CharacterStrategyFactory([new ChisaStrategy(), generic], generic);
             var strategy = strategyFactory.Create(state.CharacterName);
             strategy.PerformAsync(state, combatContext, input, CancellationToken.None).GetAwaiter().GetResult();
 
@@ -134,6 +143,92 @@ public sealed class AutoCombatTickRecognition : IMaaCustomRecognition
             && noEnemyDuration >= TimeSpan.FromMilliseconds(options.NoEnemyFinishMilliseconds);
     }
 
+    private static bool ShouldCheckCombatEndOcr(CombatContext combatContext, AutoCombatOptions options)
+    {
+        return options.Recognition.CombatEndOcrEnabled
+            && DateTimeOffset.UtcNow - combatContext.StartedAt >= TimeSpan.FromSeconds(options.CombatEndOcrMinSeconds)
+            && combatContext.FrameIndex % 2 == 0;
+    }
+
+    private static bool HasCombatEndText<T>(T context, MaaFramework.Binding.Buffers.IMaaImageBuffer image, AutoCombatOptions options)
+        where T : IMaaContext
+    {
+        var combatEndRoi = options.Recognition.CombatEndOcrRoi;
+        var roi = new[] { combatEndRoi.X, combatEndRoi.Y, combatEndRoi.Width, combatEndRoi.Height };
+        var param = JsonSerializer.Serialize(new
+        {
+            roi,
+            expected = options.Recognition.CombatEndTextRegex,
+            order_by = "Horizontal"
+        });
+        using var detail = context.RunRecognitionDirect("OCR", param, image);
+        if (detail is null || !detail.Hit)
+        {
+            return false;
+        }
+
+        foreach (var text in ExtractStrings(detail.Detail))
+        {
+            if (Regex.IsMatch(text, options.Recognition.CombatEndTextRegex))
+            {
+                Console.WriteLine($"AutoCombatTick combat end OCR hit: {text}");
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static IEnumerable<string> ExtractStrings(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            yield break;
+        }
+
+        JsonDocument? doc = null;
+        try
+        {
+            doc = JsonDocument.Parse(json);
+            foreach (var value in ExtractStrings(doc.RootElement))
+            {
+                yield return value;
+            }
+        }
+        finally
+        {
+            doc?.Dispose();
+        }
+    }
+
+    private static IEnumerable<string> ExtractStrings(JsonElement element)
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.String:
+                yield return element.GetString() ?? string.Empty;
+                break;
+            case JsonValueKind.Object:
+                foreach (var property in element.EnumerateObject())
+                {
+                    foreach (var value in ExtractStrings(property.Value))
+                    {
+                        yield return value;
+                    }
+                }
+                break;
+            case JsonValueKind.Array:
+                foreach (var item in element.EnumerateArray())
+                {
+                    foreach (var value in ExtractStrings(item))
+                    {
+                        yield return value;
+                    }
+                }
+                break;
+        }
+    }
+
     private static void TryLockTarget(CombatContext combatContext, IGameInputController input, AutoCombatOptions options)
     {
         var elapsed = DateTimeOffset.UtcNow - combatContext.LastLockAttemptAt;
@@ -175,6 +270,12 @@ public sealed class AutoCombatTickRecognition : IMaaCustomRecognition
                 state.ResonanceReady,
                 state.LiberationReady,
                 state.EchoReady,
+                state.ConcertoFull,
+                state.ChisaForteFull,
+                state.ChisaForteVisible,
+                state.ChisaForteFullScore,
+                state.ChisaForteNotFullScore,
+                state.ConcertoRatio,
                 state.CurrentSlot,
                 state.CharacterName
             }));

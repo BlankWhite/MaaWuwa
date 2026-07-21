@@ -9,15 +9,17 @@ public sealed record AutoCombatOptions
 
     public int LoopDelayMilliseconds { get; init; } = 80;
 
-    public int NoEnemyFramesToFinish { get; init; } = 10;
+    public int NoEnemyFramesToFinish { get; init; } = 4;
 
-    public int NoEnemyFinishMilliseconds { get; init; } = 2000;
+    public int NoEnemyFinishMilliseconds { get; init; } = 1000;
+
+    public int CombatEndOcrMinSeconds { get; init; } = 5;
 
     public int LockTargetIntervalMilliseconds { get; init; } = 500;
 
-    public int SwitchIntervalMilliseconds { get; init; } = 8000;
+    public int SwitchIntervalMilliseconds { get; init; } = 6000;
 
-    public int NormalAttackHoldMilliseconds { get; init; } = 250;
+    public int NormalAttackHoldMilliseconds { get; init; } = 120;
 
     public int FrameWidth { get; init; } = 1280;
 
@@ -73,6 +75,18 @@ public sealed record RecognitionOptions
 
     public RectOptions EchoRoi { get; init; } = new() { X = 825, Y = 520, Width = 90, Height = 90 };
 
+    public RectOptions ConcertoRoi { get; init; } = new() { X = 477, Y = 647, Width = 42, Height = 42 };
+
+    public RectOptions ChisaForteRoi { get; init; } = new() { X = 537, Y = 651, Width = 205, Height = 25 };
+
+    public string ChisaForteFullTemplate { get; init; } = "千咲特殊能量条_已满.png";
+
+    public string ChisaForteNotFullTemplate { get; init; } = "千咲特殊能量条_未满.png";
+
+    public double ChisaForteFullThreshold { get; init; } = 0.92;
+
+    public double ChisaForteFullMargin { get; init; } = 0.04;
+
     public RectOptions Slot1Roi { get; init; } = new() { X = 1160, Y = 175, Width = 90, Height = 60 };
 
     public RectOptions Slot2Roi { get; init; } = new() { X = 1160, Y = 255, Width = 90, Height = 60 };
@@ -91,7 +105,15 @@ public sealed record RecognitionOptions
 
     public double SkillReadyBrightRatio { get; init; } = 0.12;
 
+    public double ConcertoFullRingRatio { get; init; } = 0.32;
+
     public double CurrentSlotBrightRatio { get; init; } = 0.16;
+
+    public bool CombatEndOcrEnabled { get; init; } = true;
+
+    public RectOptions CombatEndOcrRoi { get; init; } = new() { X = 300, Y = 80, Width = 680, Height = 420 };
+
+    public string CombatEndTextRegex { get; init; } = "挑战成功|战斗胜利|领取奖励|获得奖励|继续挑战|离开|退出|完成|结算|复活|复苏";
 }
 
 [JsonSourceGenerationOptions(

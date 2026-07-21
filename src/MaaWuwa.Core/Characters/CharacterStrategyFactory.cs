@@ -18,6 +18,17 @@ public sealed class CharacterStrategyFactory : ICharacterStrategyFactory
             return _generic;
         }
 
-        return _strategies.TryGetValue(characterName, out var strategy) ? strategy : _generic;
+        var normalized = NormalizeCharacterName(characterName);
+        return _strategies.TryGetValue(normalized, out var strategy) ? strategy : _generic;
+    }
+
+    private static string NormalizeCharacterName(string characterName)
+    {
+        return characterName.Trim() switch
+        {
+            "千咲" => "Chisa",
+            "chisa" => "Chisa",
+            _ => characterName.Trim()
+        };
     }
 }

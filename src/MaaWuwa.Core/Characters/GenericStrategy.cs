@@ -21,55 +21,35 @@ public sealed class GenericStrategy : ICharacterStrategy
         IGameInputController input,
         CancellationToken cancellationToken)
     {
+        if (!state.HasTarget)
+        {
+            return;
+        }
+
+        // State-driven only: do not rotate by time. Unknown characters should not
+        // auto-switch until their role/concerto ROI is calibrated; false concerto
+        // positives caused repeated switching to slot 2.
         if (state.LiberationReady)
         {
             await input.PressAsync(GameKey.Liberation, cancellationToken).ConfigureAwait(false);
             await Task.Delay(300, cancellationToken).ConfigureAwait(false);
-        }
-
-        if (state.ResonanceReady)
-        {
-            await input.PressAsync(GameKey.ResonanceSkill, cancellationToken).ConfigureAwait(false);
-            await Task.Delay(250, cancellationToken).ConfigureAwait(false);
+            return;
         }
 
         if (state.EchoReady)
         {
             await input.PressAsync(GameKey.Echo, cancellationToken).ConfigureAwait(false);
-            await Task.Delay(200, cancellationToken).ConfigureAwait(false);
+            await Task.Delay(180, cancellationToken).ConfigureAwait(false);
+            return;
         }
 
-        await input.HoldAsync(
-            GameKey.NormalAttack,
-            TimeSpan.FromMilliseconds(_options.NormalAttackHoldMilliseconds),
-            cancellationToken).ConfigureAwait(false);
-
-        if (ShouldSwitch(state, context))
+        if (state.ResonanceReady)
         {
-            var nextCharacter = GetNextCharacterKey(state.CurrentSlot);
-            await input.PressAsync(nextCharacter, cancellationToken).ConfigureAwait(false);
-            context.LastSwitchAt = DateTimeOffset.UtcNow;
-        }
-    }
-
-    private bool ShouldSwitch(CombatState state, CombatContext context)
-    {
-        if (state.ConcertoFull)
-        {
-            return true;
+            await input.PressAsync(GameKey.ResonanceSkill, cancellationToken).ConfigureAwait(false);
+            await Task.Delay(180, cancellationToken).ConfigureAwait(false);
+            return;
         }
 
-        return DateTimeOffset.UtcNow - context.LastSwitchAt >= TimeSpan.FromMilliseconds(_options.SwitchIntervalMilliseconds);
-    }
-
-    private static GameKey GetNextCharacterKey(int currentSlot)
-    {
-        return currentSlot switch
-        {
-            1 => GameKey.SwitchCharacter2,
-            2 => GameKey.SwitchCharacter3,
-            3 => GameKey.SwitchCharacter1,
-            _ => GameKey.SwitchCharacter2
-        };
+        await input.PressAsync(GameKey.NormalAttack, cancellationToken).ConfigureAwait(false);
     }
 }

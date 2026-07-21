@@ -263,6 +263,7 @@ public sealed partial class DailyTickRecognition : IMaaCustomRecognition
     private static void CombatTick(IMaaContext context, AnalyzeArgs args, DailyAgentRun run)
     {
         using var frame = DecodeFrame(args.Image);
+        run.Combat.FrameIndex++;
         if (run.Options.EnableDebugCapture && run.Context.Tick % 8 == 0)
         {
             Directory.CreateDirectory(run.Options.DebugDirectory);
@@ -289,16 +290,28 @@ public sealed partial class DailyTickRecognition : IMaaCustomRecognition
 
         var timedOut = Elapsed(run) > TimeSpan.FromSeconds(run.Options.DomainCombatSeconds);
         var minCombat = Elapsed(run) > TimeSpan.FromSeconds(10);
-        var noEnemy = run.Combat.ConsecutiveNoEnemyFrames >= 8 && DateTimeOffset.UtcNow - run.Combat.LastEnemySeenAt > TimeSpan.FromSeconds(2);
-        if (timedOut || (minCombat && noEnemy))
+        var noEnemy = run.Combat.ConsecutiveNoEnemyFrames >= run.AutoCombatOptions.NoEnemyFramesToFinish
+            && DateTimeOffset.UtcNow - run.Combat.LastEnemySeenAt > TimeSpan.FromMilliseconds(run.AutoCombatOptions.NoEnemyFinishMilliseconds);
+        var combatEndText = minCombat && ShouldCheckCombatEndOcr(run.Combat, run.AutoCombatOptions)
+            && HasCombatEndText(context, args.Image, run.AutoCombatOptions);
+        if (timedOut || combatEndText || (minCombat && noEnemy))
         {
+            Log(run, timedOut ? "combat timed out, claim reward" : combatEndText ? "combat end text found, claim reward" : "no enemy, claim reward");
             Next(run, DailyStep.ClaimDomainReward);
             return;
         }
 
         var input = new MaaGameController(new ContextActionControllerAdapter(context, args.Roi));
+        if (!state.HasTarget)
+        {
+            TryLockTarget(run.Combat, input, run.AutoCombatOptions);
+            return;
+        }
+
         var generic = new GenericStrategy(run.AutoCombatOptions);
-        generic.PerformAsync(state, run.Combat, input, CancellationToken.None).GetAwaiter().GetResult();
+        ICharacterStrategyFactory strategyFactory = new CharacterStrategyFactory([new ChisaStrategy(), generic], generic);
+        var strategy = strategyFactory.Create(state.CharacterName);
+        strategy.PerformAsync(state, run.Combat, input, CancellationToken.None).GetAwaiter().GetResult();
     }
 
     private static void ClaimDomainReward(IMaaContext context, IMaaRectBuffer box, DailyAgentRun run)
@@ -373,6 +386,52 @@ public sealed partial class DailyTickRecognition : IMaaCustomRecognition
         Sleep(1200);
         ClickKey(context, box, VkEscape);
         Sleep(1000);
+    }
+
+    private static bool ShouldCheckCombatEndOcr(CombatContext combatContext, AutoCombatOptions options)
+    {
+        return options.Recognition.CombatEndOcrEnabled
+            && DateTimeOffset.UtcNow - combatContext.StartedAt >= TimeSpan.FromSeconds(options.CombatEndOcrMinSeconds)
+            && combatContext.FrameIndex % 2 == 0;
+    }
+
+    private static bool HasCombatEndText(IMaaContext context, IMaaImageBuffer image, AutoCombatOptions options)
+    {
+        var combatEndRoi = options.Recognition.CombatEndOcrRoi;
+        var roi = new[] { combatEndRoi.X, combatEndRoi.Y, combatEndRoi.Width, combatEndRoi.Height };
+        var param = JsonSerializer.Serialize(new
+        {
+            roi,
+            expected = options.Recognition.CombatEndTextRegex,
+            order_by = "Horizontal"
+        }, JsonOptions);
+        using var detail = context.RunRecognitionDirect("OCR", param, image);
+        if (detail is null || !detail.Hit)
+        {
+            return false;
+        }
+
+        foreach (var text in ExtractStrings(detail.Detail))
+        {
+            if (Regex.IsMatch(text, options.Recognition.CombatEndTextRegex))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void TryLockTarget(CombatContext combatContext, IGameInputController input, AutoCombatOptions options)
+    {
+        var elapsed = DateTimeOffset.UtcNow - combatContext.LastLockAttemptAt;
+        if (elapsed < TimeSpan.FromMilliseconds(options.LockTargetIntervalMilliseconds))
+        {
+            return;
+        }
+
+        input.PressAsync(GameKey.LockTarget, CancellationToken.None).GetAwaiter().GetResult();
+        combatContext.LastLockAttemptAt = DateTimeOffset.UtcNow;
     }
 
     private static bool HasFInteract(IMaaContext context, IMaaImageBuffer image, DailyOptions options)

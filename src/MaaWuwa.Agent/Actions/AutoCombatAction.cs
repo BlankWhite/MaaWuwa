@@ -56,7 +56,7 @@ public sealed class AutoCombatAction : IMaaCustomAction
             characterRecognizer);
 
         var generic = new GenericStrategy(options);
-        ICharacterStrategyFactory strategyFactory = new CharacterStrategyFactory([generic], generic);
+        ICharacterStrategyFactory strategyFactory = new CharacterStrategyFactory([new ChisaStrategy(), generic], generic);
         var debugWriter = new DebugFrameWriter(options, enemyRecognizer, skillRecognizer);
 
         return new AutoCombatService(capture, input, detector, strategyFactory, options, debugWriter);
