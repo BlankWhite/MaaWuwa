@@ -4,6 +4,8 @@ public interface IMaaControllerAdapter
 {
     Task ClickLeftMouseAsync(CancellationToken cancellationToken);
 
+    Task ClickRightMouseAsync(CancellationToken cancellationToken);
+
     Task ClickMiddleMouseAsync(CancellationToken cancellationToken);
 
     Task MouseDownAsync(int button, CancellationToken cancellationToken);

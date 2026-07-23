@@ -21,6 +21,7 @@ public sealed class MaaGameController : IGameInputController
         return key switch
         {
             GameKey.NormalAttack => _controller.ClickLeftMouseAsync(cancellationToken),
+            GameKey.Dodge => _controller.ClickRightMouseAsync(cancellationToken),
             GameKey.LockTarget => _controller.ClickMiddleMouseAsync(cancellationToken),
             GameKey.ResonanceSkill => _controller.PressKeyAsync(VkE, cancellationToken),
             GameKey.Liberation => _controller.PressKeyAsync(VkR, cancellationToken),

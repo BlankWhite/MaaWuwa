@@ -25,6 +25,34 @@ public sealed class CurrentSlotRecognizer
         return scores[maxIndex] >= _options.CurrentSlotBrightRatio ? maxIndex + 1 : -1;
     }
 
+    public SlotAliveState DetectAlive(Mat frame)
+    {
+        return new SlotAliveState(
+            IsAlive(frame, _options.Slot1Roi),
+            IsAlive(frame, _options.Slot2Roi),
+            IsAlive(frame, _options.Slot3Roi));
+    }
+
+    private bool IsAlive(Mat frame, RectOptions rect)
+    {
+        using var roi = new Mat(frame, rect.ClampTo(frame));
+        if (roi.Empty())
+        {
+            return false;
+        }
+
+        using var hsv = new Mat();
+        Cv2.CvtColor(roi, hsv, ColorConversionCodes.BGR2HSV);
+        using var mask = new Mat();
+        Cv2.InRange(
+            hsv,
+            new Scalar(0, _options.SlotAliveSaturationThreshold, _options.SlotAliveValueThreshold),
+            new Scalar(179, 255, 255),
+            mask);
+        var ratio = Cv2.CountNonZero(mask) / (double)Math.Max(1, roi.Rows * roi.Cols);
+        return ratio >= _options.SlotAliveColorRatio;
+    }
+
     private static double Score(Mat frame, RectOptions rect)
     {
         using var roi = new Mat(frame, rect.ClampTo(frame));
@@ -34,3 +62,5 @@ public sealed class CurrentSlotRecognizer
         return Cv2.CountNonZero(bright) / (double)Math.Max(1, gray.Rows * gray.Cols);
     }
 }
+
+public sealed record SlotAliveState(bool Slot1Alive, bool Slot2Alive, bool Slot3Alive);

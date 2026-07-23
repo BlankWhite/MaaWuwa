@@ -21,6 +21,12 @@ public sealed class MaaControllerAdapter : IMaaControllerAdapter
         return RunJobAsync(() => _controller.Click(CenterX, CenterY, contact: 0), cancellationToken);
     }
 
+    public Task ClickRightMouseAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return RunJobAsync(() => _controller.Click(CenterX, CenterY, contact: 1), cancellationToken);
+    }
+
     public Task ClickMiddleMouseAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

@@ -79,6 +79,10 @@ public sealed record RecognitionOptions
 
     public RectOptions ChisaForteRoi { get; init; } = new() { X = 537, Y = 651, Width = 205, Height = 25 };
 
+    public RectOptions FeixueForteRoi { get; init; } = new() { X = 523, Y = 636, Width = 233, Height = 43 };
+
+    public RectOptions LinnaiForteRoi { get; init; } = new() { X = 518, Y = 639, Width = 233, Height = 43 };
+
     public string ChisaForteFullTemplate { get; init; } = "千咲特殊能量条_已满.png";
 
     public string ChisaForteNotFullTemplate { get; init; } = "千咲特殊能量条_未满.png";
@@ -86,6 +90,34 @@ public sealed record RecognitionOptions
     public double ChisaForteFullThreshold { get; init; } = 0.92;
 
     public double ChisaForteFullMargin { get; init; } = 0.04;
+
+    public string FeixueForte1FullTemplate { get; init; } = "绯雪特殊能量条1_已满.png";
+
+    public string FeixueForte1NotFullTemplate { get; init; } = "绯雪特殊能量条1_未满.png";
+
+    public string FeixueForte2FullTemplate { get; init; } = "绯雪特殊能量条2_已满.png";
+
+    public string FeixueForte2NotFullTemplate { get; init; } = "绯雪特殊能量条2_未满.png";
+
+    public string FeixueForte3FullTemplate { get; init; } = "绯雪特殊能量条3_已满.png";
+
+    public double FeixueForteFullThreshold { get; init; } = 0.45;
+
+    public double FeixueForteFullMargin { get; init; } = 0.08;
+
+    public string LinnaiForteFullTemplate { get; init; } = "林奈回路_已满.png";
+
+    public string LinnaiForteNotFullTemplate { get; init; } = "林奈回路_未满.png";
+
+    public string LinnaiAcceleratedForteFullTemplate { get; init; } = "林奈加速回路_已满.png";
+
+    public string LinnaiAcceleratedForteNotFullTemplate { get; init; } = "林奈加速回路_未满.png";
+
+    public double LinnaiForteFullThreshold { get; init; } = 0.72;
+
+    public double LinnaiForteFullMargin { get; init; } = 0.04;
+
+    public double LinnaiForteVisibleThreshold { get; init; } = 0.62;
 
     public RectOptions Slot1Roi { get; init; } = new() { X = 1160, Y = 175, Width = 90, Height = 60 };
 
@@ -108,6 +140,12 @@ public sealed record RecognitionOptions
     public double ConcertoFullRingRatio { get; init; } = 0.32;
 
     public double CurrentSlotBrightRatio { get; init; } = 0.16;
+
+    public int SlotAliveSaturationThreshold { get; init; } = 35;
+
+    public int SlotAliveValueThreshold { get; init; } = 45;
+
+    public double SlotAliveColorRatio { get; init; } = 0.035;
 
     public bool CombatEndOcrEnabled { get; init; } = true;
 

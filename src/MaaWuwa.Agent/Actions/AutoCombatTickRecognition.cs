@@ -37,7 +37,8 @@ public sealed class AutoCombatTickRecognition : IMaaCustomRecognition
             var detectorParts = CreateDetectorParts(options);
             var detector = detectorParts.Detector;
             var state = detector.DetectAsync(frame, CancellationToken.None).GetAwaiter().GetResult();
-            Console.WriteLine($"AutoCombatTick state: slot={state.CurrentSlot} char={state.CharacterName ?? "?"} target={state.HasTarget} enemy={state.EnemyFound} con={state.ConcertoFull} conRatio={state.ConcertoRatio:F2} E={state.ResonanceReady} R={state.LiberationReady} Q={state.EchoReady} chisaVisible={state.ChisaForteVisible} chisaFull={state.ChisaForteFull} chisaScore={state.ChisaForteFullScore:F3}/{state.ChisaForteNotFullScore:F3}");
+            ValidatePendingSwitch(combatContext, state);
+            Console.WriteLine($"AutoCombatTick state: slot={state.CurrentSlot} char={state.CharacterName ?? "?"} target={state.HasTarget} enemy={state.EnemyFound} alive={state.Slot1Alive}/{state.Slot2Alive}/{state.Slot3Alive} disabled={combatContext.IsSlotDisabled(1)}/{combatContext.IsSlotDisabled(2)}/{combatContext.IsSlotDisabled(3)} con={state.ConcertoFull} conRatio={state.ConcertoRatio:F2} E={state.ResonanceReady} R={state.LiberationReady} Q={state.EchoReady} chisaVisible={state.ChisaForteVisible} chisaFull={state.ChisaForteFull} chisaScore={state.ChisaForteFullScore:F3}/{state.ChisaForteNotFullScore:F3} feixueVisible={state.FeixueForteVisible} feixueStage={state.FeixueForteStage} feixueScore={state.FeixueForte1FullScore:F3}/{state.FeixueForte1NotFullScore:F3}/{state.FeixueForte2FullScore:F3}/{state.FeixueForte2NotFullScore:F3}/{state.FeixueForte3FullScore:F3} linnaiVisible={state.LinnaiForteVisible}/{state.LinnaiAcceleratedForteVisible} linnaiFull={state.LinnaiForteFull}/{state.LinnaiAcceleratedForteFull} linnaiScore={state.LinnaiForteFullScore:F3}/{state.LinnaiForteNotFullScore:F3}/{state.LinnaiAcceleratedForteFullScore:F3}/{state.LinnaiAcceleratedForteNotFullScore:F3}");
 
             combatContext.CurrentSlot = state.CurrentSlot;
             UpdateEnemyState(combatContext, state);
@@ -53,8 +54,14 @@ public sealed class AutoCombatTickRecognition : IMaaCustomRecognition
                 return Finish(context, args, results, combatContext, "combat_end_text");
             }
 
+            if (combatContext.PendingSwitchTargetSlot != 0)
+            {
+                context.OverrideNext(args.NodeName, [args.NodeName]);
+                return SetResult(results, state, "switching");
+            }
+
             var input = new MaaGameController(new ContextActionControllerAdapter(context, args.Roi));
-            if (!state.HasTarget)
+            if (!state.HasTarget && !CanRunWithoutTarget(state, combatContext))
             {
                 TryLockTarget(combatContext, input, options);
                 context.OverrideNext(args.NodeName, [args.NodeName]);
@@ -62,8 +69,9 @@ public sealed class AutoCombatTickRecognition : IMaaCustomRecognition
             }
 
             var generic = new GenericStrategy(options);
-            ICharacterStrategyFactory strategyFactory = new CharacterStrategyFactory([new ChisaStrategy(), generic], generic);
-            var strategy = strategyFactory.Create(state.CharacterName);
+            ICharacterStrategyFactory strategyFactory = new CharacterStrategyFactory([new FeixueStrategy(), new LinnaiStrategy(), new SanhuaStrategy(), new ChisaStrategy(), generic], generic);
+            var strategyName = GetStrategyName(state, combatContext);
+            var strategy = strategyFactory.Create(strategyName);
             strategy.PerformAsync(state, combatContext, input, CancellationToken.None).GetAwaiter().GetResult();
 
             context.OverrideNext(args.NodeName, [args.NodeName]);
@@ -141,6 +149,55 @@ public sealed class AutoCombatTickRecognition : IMaaCustomRecognition
         var noEnemyDuration = DateTimeOffset.UtcNow - combatContext.LastEnemySeenAt;
         return combatContext.ConsecutiveNoEnemyFrames >= options.NoEnemyFramesToFinish
             && noEnemyDuration >= TimeSpan.FromMilliseconds(options.NoEnemyFinishMilliseconds);
+    }
+
+    private static bool CanRunWithoutTarget(CombatState state, CombatContext combatContext)
+    {
+        return (string.Equals(GetStrategyName(state, combatContext), "Feixue", StringComparison.OrdinalIgnoreCase)
+                && (state.FeixueForteStage > 0
+                    || combatContext.FeixueFirstForteReleased
+                    || combatContext.FeixueSecondForm
+                    || combatContext.FeixueThirdForteReleased));
+    }
+
+    private static string? GetStrategyName(CombatState state, CombatContext combatContext)
+    {
+        if (combatContext.FeixueFirstForteReleased
+            || combatContext.FeixueSecondForm
+            || combatContext.FeixueThirdForteReleased)
+        {
+            return "Feixue";
+        }
+
+        return state.CharacterName;
+    }
+
+    private static void ValidatePendingSwitch(CombatContext combatContext, CombatState state)
+    {
+        if (combatContext.PendingSwitchTargetSlot == 0)
+        {
+            return;
+        }
+
+        if (state.CurrentSlot == combatContext.PendingSwitchTargetSlot)
+        {
+            Console.WriteLine($"AutoCombatTick switch confirmed: slot {combatContext.PendingSwitchTargetSlot}");
+            combatContext.PendingSwitchTargetSlot = 0;
+            return;
+        }
+
+        var elapsed = DateTimeOffset.UtcNow - combatContext.PendingSwitchRequestedAt;
+        if (elapsed < TimeSpan.FromMilliseconds(1200))
+        {
+            return;
+        }
+
+        if (state.CurrentSlot > 0 || elapsed >= TimeSpan.FromMilliseconds(2200))
+        {
+            Console.WriteLine($"AutoCombatTick switch target slot {combatContext.PendingSwitchTargetSlot} unavailable, disable temporarily; current={state.CurrentSlot}, elapsed={elapsed.TotalMilliseconds:F0}ms");
+            combatContext.DisableSlot(combatContext.PendingSwitchTargetSlot, TimeSpan.FromSeconds(30));
+            combatContext.PendingSwitchTargetSlot = 0;
+        }
     }
 
     private static bool ShouldCheckCombatEndOcr(CombatContext combatContext, AutoCombatOptions options)
@@ -276,7 +333,25 @@ public sealed class AutoCombatTickRecognition : IMaaCustomRecognition
                 state.ChisaForteFullScore,
                 state.ChisaForteNotFullScore,
                 state.ConcertoRatio,
+                state.FeixueForteStage,
+                state.FeixueForteVisible,
+                state.FeixueForte1FullScore,
+                state.FeixueForte1NotFullScore,
+                state.FeixueForte2FullScore,
+                state.FeixueForte2NotFullScore,
+                state.FeixueForte3FullScore,
+                state.LinnaiForteVisible,
+                state.LinnaiForteFull,
+                state.LinnaiAcceleratedForteVisible,
+                state.LinnaiAcceleratedForteFull,
+                state.LinnaiForteFullScore,
+                state.LinnaiForteNotFullScore,
+                state.LinnaiAcceleratedForteFullScore,
+                state.LinnaiAcceleratedForteNotFullScore,
                 state.CurrentSlot,
+                state.Slot1Alive,
+                state.Slot2Alive,
+                state.Slot3Alive,
                 state.CharacterName
             }));
     }

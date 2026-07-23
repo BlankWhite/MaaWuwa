@@ -87,20 +87,53 @@ public sealed class ChisaStrategy : ICharacterStrategy
         IGameInputController input,
         CancellationToken cancellationToken)
     {
-        var nextCharacter = GetNextCharacterKey(state.CurrentSlot);
+        var nextSlot = GetNextAliveSlot(state, context);
+        if (nextSlot == 0)
+        {
+            Console.WriteLine("ChisaStrategy: no alive switch target, stay current");
+            return;
+        }
+
+        var nextCharacter = ToSwitchKey(nextSlot);
+        Console.WriteLine($"ChisaStrategy: switch target -> slot {nextSlot}");
         await input.PressAsync(nextCharacter, cancellationToken).ConfigureAwait(false);
+        context.RecordSwitchAttempt(nextSlot);
         context.LastSwitchAt = DateTimeOffset.UtcNow;
         await Task.Delay(300, cancellationToken).ConfigureAwait(false);
     }
 
-    private static GameKey GetNextCharacterKey(int currentSlot)
+    private static int GetNextAliveSlot(CombatState state, CombatContext context)
     {
-        return currentSlot switch
+        var order = state.CurrentSlot switch
         {
-            1 => GameKey.SwitchCharacter2,
-            2 => GameKey.SwitchCharacter3,
-            3 => GameKey.SwitchCharacter1,
-            _ => GameKey.SwitchCharacter2
+            1 => new[] {2, 3},
+            2 => new[] {3, 1},
+            3 => new[] {1, 2},
+            _ => new[] {1, 2, 3}
+        };
+
+        return order.FirstOrDefault(slot => slot != state.CurrentSlot && IsSlotAlive(state, slot) && !context.IsSlotDisabled(slot));
+    }
+
+    private static bool IsSlotAlive(CombatState state, int slot)
+    {
+        return slot switch
+        {
+            1 => state.Slot1Alive,
+            2 => state.Slot2Alive,
+            3 => state.Slot3Alive,
+            _ => false
+        };
+    }
+
+    private static GameKey ToSwitchKey(int slot)
+    {
+        return slot switch
+        {
+            1 => GameKey.SwitchCharacter1,
+            2 => GameKey.SwitchCharacter2,
+            3 => GameKey.SwitchCharacter3,
+            _ => throw new ArgumentOutOfRangeException(nameof(slot), slot, null)
         };
     }
 }

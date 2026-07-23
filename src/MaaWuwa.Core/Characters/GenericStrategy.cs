@@ -29,13 +29,8 @@ public sealed class GenericStrategy : ICharacterStrategy
         // State-driven only: do not rotate by time. Unknown characters should not
         // auto-switch until their role/concerto ROI is calibrated; false concerto
         // positives caused repeated switching to slot 2.
-        if (state.LiberationReady)
-        {
-            await input.PressAsync(GameKey.Liberation, cancellationToken).ConfigureAwait(false);
-            await Task.Delay(300, cancellationToken).ConfigureAwait(false);
-            return;
-        }
-
+        // 未识别到当前角色时不释放大招。绯雪二阶段槽位经常识别为 -1，
+        // 若 Generic 看到 R 亮就按，会绕过角色策略并提前打出 R2。
         if (state.EchoReady)
         {
             await input.PressAsync(GameKey.Echo, cancellationToken).ConfigureAwait(false);

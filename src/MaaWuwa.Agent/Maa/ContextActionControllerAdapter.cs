@@ -39,6 +39,13 @@ public sealed class ContextActionControllerAdapter : IMaaControllerAdapter
         return Task.CompletedTask;
     }
 
+    public Task ClickRightMouseAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        RunAction("Click", new { target = new[] { 640, 360 }, contact = 1 });
+        return Task.CompletedTask;
+    }
+
     public Task ClickMiddleMouseAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

@@ -28,6 +28,15 @@ public sealed class CharacterStrategyFactory : ICharacterStrategyFactory
         {
             "千咲" => "Chisa",
             "chisa" => "Chisa",
+            "散华" => "Sanhua",
+            "散華" => "Sanhua",
+            "sanhua" => "Sanhua",
+            "琳奈" => "Linnai",
+            "林奈" => "Linnai",
+            "linnai" => "Linnai",
+            "绯雪" => "Feixue",
+            "緋雪" => "Feixue",
+            "feixue" => "Feixue",
             _ => characterName.Trim()
         };
     }

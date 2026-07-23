@@ -3,6 +3,7 @@ namespace MaaWuwa.Core.Input;
 public enum GameKey
 {
     NormalAttack,
+    Dodge,
     ResonanceSkill,
     Liberation,
     Echo,

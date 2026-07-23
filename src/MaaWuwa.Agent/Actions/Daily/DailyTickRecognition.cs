@@ -302,14 +302,14 @@ public sealed partial class DailyTickRecognition : IMaaCustomRecognition
         }
 
         var input = new MaaGameController(new ContextActionControllerAdapter(context, args.Roi));
-        if (!state.HasTarget)
+        if (!state.HasTarget && !CanRunWithoutTarget(state))
         {
             TryLockTarget(run.Combat, input, run.AutoCombatOptions);
             return;
         }
 
         var generic = new GenericStrategy(run.AutoCombatOptions);
-        ICharacterStrategyFactory strategyFactory = new CharacterStrategyFactory([new ChisaStrategy(), generic], generic);
+        ICharacterStrategyFactory strategyFactory = new CharacterStrategyFactory([new FeixueStrategy(), new LinnaiStrategy(), new SanhuaStrategy(), new ChisaStrategy(), generic], generic);
         var strategy = strategyFactory.Create(state.CharacterName);
         strategy.PerformAsync(state, run.Combat, input, CancellationToken.None).GetAwaiter().GetResult();
     }
@@ -386,6 +386,12 @@ public sealed partial class DailyTickRecognition : IMaaCustomRecognition
         Sleep(1200);
         ClickKey(context, box, VkEscape);
         Sleep(1000);
+    }
+
+    private static bool CanRunWithoutTarget(CombatState state)
+    {
+        return string.Equals(state.CharacterName, "Feixue", StringComparison.OrdinalIgnoreCase)
+            && state.FeixueForteStage > 0;
     }
 
     private static bool ShouldCheckCombatEndOcr(CombatContext combatContext, AutoCombatOptions options)

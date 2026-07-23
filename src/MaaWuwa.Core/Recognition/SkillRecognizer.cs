@@ -18,6 +18,8 @@ public sealed class SkillRecognizer
     public SkillState Detect(Mat frame)
     {
         var chisa = DetectChisaForte(frame);
+        var feixue = DetectFeixueForte(frame);
+        var linnai = DetectLinnaiForte(frame);
         var concertoRatio = GetConcertoRatio(frame);
         return new SkillState
         {
@@ -29,7 +31,22 @@ public sealed class SkillRecognizer
             ChisaForteFull = chisa.Full,
             ChisaForteVisible = chisa.Visible,
             ChisaForteFullScore = chisa.FullScore,
-            ChisaForteNotFullScore = chisa.NotFullScore
+            ChisaForteNotFullScore = chisa.NotFullScore,
+            FeixueForteStage = feixue.Stage,
+            FeixueForteVisible = feixue.Visible,
+            FeixueForte1FullScore = feixue.Stage1FullScore,
+            FeixueForte1NotFullScore = feixue.Stage1NotFullScore,
+            FeixueForte2FullScore = feixue.Stage2FullScore,
+            FeixueForte2NotFullScore = feixue.Stage2NotFullScore,
+            FeixueForte3FullScore = feixue.Stage3FullScore,
+            LinnaiForteVisible = linnai.NormalVisible,
+            LinnaiForteFull = linnai.NormalFull,
+            LinnaiAcceleratedForteVisible = linnai.AcceleratedVisible,
+            LinnaiAcceleratedForteFull = linnai.AcceleratedFull,
+            LinnaiForteFullScore = linnai.NormalFullScore,
+            LinnaiForteNotFullScore = linnai.NormalNotFullScore,
+            LinnaiAcceleratedForteFullScore = linnai.AcceleratedFullScore,
+            LinnaiAcceleratedForteNotFullScore = linnai.AcceleratedNotFullScore
         };
     }
 
@@ -75,6 +92,80 @@ public sealed class SkillRecognizer
             && fullScore >= notFullScore + _options.ChisaForteFullMargin;
 
         return new ChisaForteResult(visible, full, fullScore, notFullScore);
+    }
+
+    private FeixueForteResult DetectFeixueForte(Mat frame)
+    {
+        using var roi = new Mat(frame, _options.FeixueForteRoi.ClampTo(frame));
+        if (roi.Empty())
+        {
+            return new FeixueForteResult(false, 0, 0, 0, 0, 0, 0);
+        }
+
+        var stage1Full = MatchTemplateScoreOrZero(roi, _options.FeixueForte1FullTemplate);
+        var stage1NotFull = MatchTemplateScoreOrZero(roi, _options.FeixueForte1NotFullTemplate);
+        var stage2Full = MatchTemplateScoreOrZero(roi, _options.FeixueForte2FullTemplate);
+        var stage2NotFull = MatchTemplateScoreOrZero(roi, _options.FeixueForte2NotFullTemplate);
+        var stage3Full = MatchTemplateScoreOrZero(roi, _options.FeixueForte3FullTemplate);
+
+        var notFullBest = Math.Max(stage1NotFull, stage2NotFull);
+        var bestFull = Math.Max(stage1Full, Math.Max(stage2Full, stage3Full));
+        var stage = 0;
+        if (bestFull >= _options.FeixueForteFullThreshold && bestFull >= notFullBest + _options.FeixueForteFullMargin)
+        {
+            stage = bestFull == stage3Full ? 3 : bestFull == stage2Full ? 2 : 1;
+        }
+
+        var visible = stage > 0 || Math.Max(bestFull, notFullBest) >= 0.70;
+        return new FeixueForteResult(visible, stage, stage1Full, stage1NotFull, stage2Full, stage2NotFull, stage3Full);
+    }
+
+    private LinnaiForteResult DetectLinnaiForte(Mat frame)
+    {
+        using var roi = new Mat(frame, _options.LinnaiForteRoi.ClampTo(frame));
+        if (roi.Empty())
+        {
+            return new LinnaiForteResult(false, false, false, false, 0, 0, 0, 0);
+        }
+
+        var normalFull = MatchTemplateScoreOrZero(roi, _options.LinnaiForteFullTemplate);
+        var normalNotFull = MatchTemplateScoreOrZero(roi, _options.LinnaiForteNotFullTemplate);
+        var acceleratedFull = MatchTemplateScoreOrZero(roi, _options.LinnaiAcceleratedForteFullTemplate);
+        var acceleratedNotFull = MatchTemplateScoreOrZero(roi, _options.LinnaiAcceleratedForteNotFullTemplate);
+
+        var normalBest = Math.Max(normalFull, normalNotFull);
+        var acceleratedBest = Math.Max(acceleratedFull, acceleratedNotFull);
+        var normalVisible = normalBest >= _options.LinnaiForteVisibleThreshold
+            && normalBest >= acceleratedBest - 0.03;
+        var acceleratedVisible = acceleratedBest >= _options.LinnaiForteVisibleThreshold
+            && acceleratedBest > normalBest + 0.03;
+        var normalIsFull = normalVisible
+            && normalFull >= _options.LinnaiForteFullThreshold
+            && normalFull >= normalNotFull + _options.LinnaiForteFullMargin;
+        var acceleratedIsFull = acceleratedVisible
+            && acceleratedFull >= _options.LinnaiForteFullThreshold
+            && acceleratedFull >= acceleratedNotFull + _options.LinnaiForteFullMargin;
+
+        return new LinnaiForteResult(
+            normalVisible,
+            normalIsFull,
+            acceleratedVisible,
+            acceleratedIsFull,
+            normalFull,
+            normalNotFull,
+            acceleratedFull,
+            acceleratedNotFull);
+    }
+
+    private static double MatchTemplateScoreOrZero(Mat roi, string templateName)
+    {
+        var template = LoadTemplate(templateName);
+        if (template is null || template.Empty() || roi.Width < template.Width || roi.Height < template.Height)
+        {
+            return 0;
+        }
+
+        return MatchTemplateScore(roi, template);
     }
 
     private static double MatchTemplateScore(Mat source, Mat template)
@@ -184,4 +275,23 @@ public sealed class SkillRecognizer
     }
 
     private sealed record ChisaForteResult(bool Visible, bool Full, double FullScore, double NotFullScore);
+
+    private sealed record FeixueForteResult(
+        bool Visible,
+        int Stage,
+        double Stage1FullScore,
+        double Stage1NotFullScore,
+        double Stage2FullScore,
+        double Stage2NotFullScore,
+        double Stage3FullScore);
+
+    private sealed record LinnaiForteResult(
+        bool NormalVisible,
+        bool NormalFull,
+        bool AcceleratedVisible,
+        bool AcceleratedFull,
+        double NormalFullScore,
+        double NormalNotFullScore,
+        double AcceleratedFullScore,
+        double AcceleratedNotFullScore);
 }

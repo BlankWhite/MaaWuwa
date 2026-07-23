@@ -12,8 +12,8 @@
     "enableDebugCapture": false,
     "debugDirectory": "debug/auto-combat",
     "team": [
-        "Character1",
-        "Character2",
+        "Feixue",
+        "Linnai",
         "Chisa"
     ],
     "recognition": {
@@ -59,10 +59,36 @@
             "width": 205,
             "height": 25
         },
+        "feixueForteRoi": {
+            "x": 523,
+            "y": 636,
+            "width": 233,
+            "height": 43
+        },
+        "linnaiForteRoi": {
+            "x": 518,
+            "y": 639,
+            "width": 233,
+            "height": 43
+        },
         "chisaForteFullTemplate": "千咲特殊能量条_已满.png",
         "chisaForteNotFullTemplate": "千咲特殊能量条_未满.png",
         "chisaForteFullThreshold": 0.92,
         "chisaForteFullMargin": 0.04,
+        "feixueForte1FullTemplate": "绯雪特殊能量条1_已满.png",
+        "feixueForte1NotFullTemplate": "绯雪特殊能量条1_未满.png",
+        "feixueForte2FullTemplate": "绯雪特殊能量条2_已满.png",
+        "feixueForte2NotFullTemplate": "绯雪特殊能量条2_未满.png",
+        "feixueForte3FullTemplate": "绯雪特殊能量条3_已满.png",
+        "feixueForteFullThreshold": 0.45,
+        "feixueForteFullMargin": 0.08,
+        "linnaiForteFullTemplate": "林奈回路_已满.png",
+        "linnaiForteNotFullTemplate": "林奈回路_未满.png",
+        "linnaiAcceleratedForteFullTemplate": "林奈加速回路_已满.png",
+        "linnaiAcceleratedForteNotFullTemplate": "林奈加速回路_未满.png",
+        "linnaiForteFullThreshold": 0.72,
+        "linnaiForteFullMargin": 0.04,
+        "linnaiForteVisibleThreshold": 0.62,
         "slot1Roi": {
             "x": 1160,
             "y": 175,
@@ -89,6 +115,9 @@
         "skillReadyBrightRatio": 0.12,
         "concertoFullRingRatio": 0.32,
         "currentSlotBrightRatio": 0.16,
+        "slotAliveSaturationThreshold": 35,
+        "slotAliveValueThreshold": 45,
+        "slotAliveColorRatio": 0.035,
         "combatEndOcrEnabled": true,
         "combatEndOcrRoi": {
             "x": 300,

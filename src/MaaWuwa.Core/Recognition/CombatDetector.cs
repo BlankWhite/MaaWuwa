@@ -33,10 +33,23 @@ public sealed class CombatDetector : ICombatDetector
         var bossFound = _bossRecognizer.Detect(frame);
         var skillState = _skillRecognizer.Detect(frame);
         var currentSlot = _slotRecognizer.Detect(frame);
-        var characterName = skillState.ChisaForteVisible ? "Chisa" : _characterRecognizer.Detect(currentSlot);
+        var aliveState = _slotRecognizer.DetectAlive(frame);
+        var characterName = _characterRecognizer.Detect(currentSlot);
         if (skillState.ChisaForteVisible)
         {
+            characterName = "Chisa";
             currentSlot = 3;
+        }
+        else if (skillState.FeixueForteVisible && (currentSlot <= 0 || currentSlot == 1))
+        {
+            characterName = "Feixue";
+            currentSlot = 1;
+        }
+        else if ((skillState.LinnaiForteVisible || skillState.LinnaiAcceleratedForteVisible)
+                 && (currentSlot <= 0 || currentSlot == 2))
+        {
+            characterName = "Linnai";
+            currentSlot = 2;
         }
 
         return Task.FromResult(new CombatState
@@ -53,7 +66,25 @@ public sealed class CombatDetector : ICombatDetector
             ChisaForteFullScore = skillState.ChisaForteFullScore,
             ChisaForteNotFullScore = skillState.ChisaForteNotFullScore,
             ConcertoRatio = skillState.ConcertoRatio,
+            FeixueForteStage = skillState.FeixueForteStage,
+            FeixueForteVisible = skillState.FeixueForteVisible,
+            FeixueForte1FullScore = skillState.FeixueForte1FullScore,
+            FeixueForte1NotFullScore = skillState.FeixueForte1NotFullScore,
+            FeixueForte2FullScore = skillState.FeixueForte2FullScore,
+            FeixueForte2NotFullScore = skillState.FeixueForte2NotFullScore,
+            FeixueForte3FullScore = skillState.FeixueForte3FullScore,
+            LinnaiForteVisible = skillState.LinnaiForteVisible,
+            LinnaiForteFull = skillState.LinnaiForteFull,
+            LinnaiAcceleratedForteVisible = skillState.LinnaiAcceleratedForteVisible,
+            LinnaiAcceleratedForteFull = skillState.LinnaiAcceleratedForteFull,
+            LinnaiForteFullScore = skillState.LinnaiForteFullScore,
+            LinnaiForteNotFullScore = skillState.LinnaiForteNotFullScore,
+            LinnaiAcceleratedForteFullScore = skillState.LinnaiAcceleratedForteFullScore,
+            LinnaiAcceleratedForteNotFullScore = skillState.LinnaiAcceleratedForteNotFullScore,
             CurrentSlot = currentSlot,
+            Slot1Alive = aliveState.Slot1Alive,
+            Slot2Alive = aliveState.Slot2Alive,
+            Slot3Alive = aliveState.Slot3Alive,
             CharacterName = characterName
         });
     }
