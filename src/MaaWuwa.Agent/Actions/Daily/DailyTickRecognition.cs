@@ -274,7 +274,7 @@ public sealed partial class DailyTickRecognition : IMaaCustomRecognition
         var boss = new BossHealthBarRecognizer(run.AutoCombatOptions.Recognition);
         var skill = new SkillRecognizer(run.AutoCombatOptions.Recognition);
         var slot = new CurrentSlotRecognizer(run.AutoCombatOptions.Recognition);
-        var character = new CharacterRecognizer(run.AutoCombatOptions.Team);
+        var character = new CharacterRecognizer(run.AutoCombatOptions.Team, run.AutoCombatOptions.Recognition);
         var detector = new CombatDetector(enemy, boss, skill, slot, character);
         var state = detector.DetectAsync(frame, CancellationToken.None).GetAwaiter().GetResult();
 

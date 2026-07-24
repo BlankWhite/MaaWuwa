@@ -125,6 +125,30 @@ public sealed record RecognitionOptions
 
     public RectOptions Slot3Roi { get; init; } = new() { X = 1160, Y = 335, Width = 90, Height = 60 };
 
+    public RectOptions Slot1TextRoi { get; init; } = new() { X = 1154, Y = 139, Width = 18, Height = 17 };
+
+    public RectOptions Slot2TextRoi { get; init; } = new() { X = 1155, Y = 227, Width = 18, Height = 17 };
+
+    public RectOptions Slot3TextRoi { get; init; } = new() { X = 1154, Y = 314, Width = 18, Height = 18 };
+
+    public RectOptions Slot1CharacterRoi { get; init; } = new() { X = 1172, Y = 139, Width = 45, Height = 52 };
+
+    public RectOptions Slot2CharacterRoi { get; init; } = new() { X = 1171, Y = 227, Width = 44, Height = 52 };
+
+    public RectOptions Slot3CharacterRoi { get; init; } = new() { X = 1171, Y = 318, Width = 45, Height = 50 };
+
+    public string Slot1TextTemplate { get; init; } = "char_1_text.png";
+
+    public string Slot2TextTemplate { get; init; } = "char_2_text.png";
+
+    public string Slot3TextTemplate { get; init; } = "char_3_text.png";
+
+    public double SlotTextThreshold { get; init; } = 0.80;
+
+    public Dictionary<string, string> CharacterTemplates { get; init; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public double CharacterTemplateThreshold { get; init; } = 0.62;
+
     public double EnemyMinAspectRatio { get; init; } = 3.0;
 
     public int EnemyMinWidth { get; init; } = 20;

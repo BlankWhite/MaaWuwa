@@ -47,7 +47,7 @@ public sealed class AutoCombatAction : IMaaCustomAction
         var bossRecognizer = new BossHealthBarRecognizer(options.Recognition);
         var skillRecognizer = new SkillRecognizer(options.Recognition);
         var slotRecognizer = new CurrentSlotRecognizer(options.Recognition);
-        var characterRecognizer = new CharacterRecognizer(options.Team);
+        var characterRecognizer = new CharacterRecognizer(options.Team, options.Recognition);
         ICombatDetector detector = new CombatDetector(
             enemyRecognizer,
             bossRecognizer,

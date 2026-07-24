@@ -34,7 +34,7 @@ public sealed class CombatDetector : ICombatDetector
         var skillState = _skillRecognizer.Detect(frame);
         var currentSlot = _slotRecognizer.Detect(frame);
         var aliveState = _slotRecognizer.DetectAlive(frame);
-        var characterName = _characterRecognizer.Detect(currentSlot);
+        var characterName = _characterRecognizer.Detect(frame, currentSlot);
         if (skillState.ChisaForteVisible)
         {
             characterName = "Chisa";

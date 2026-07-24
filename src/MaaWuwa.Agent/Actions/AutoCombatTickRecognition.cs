@@ -103,7 +103,7 @@ public sealed class AutoCombatTickRecognition : IMaaCustomRecognition
         var bossRecognizer = new BossHealthBarRecognizer(options.Recognition);
         var skillRecognizer = new SkillRecognizer(options.Recognition);
         var slotRecognizer = new CurrentSlotRecognizer(options.Recognition);
-        var characterRecognizer = new CharacterRecognizer(options.Team);
+        var characterRecognizer = new CharacterRecognizer(options.Team, options.Recognition);
         var detector = new CombatDetector(enemyRecognizer, bossRecognizer, skillRecognizer, slotRecognizer, characterRecognizer);
         var debugFrameWriter = new DebugFrameWriter(options, enemyRecognizer, skillRecognizer);
         return (detector, debugFrameWriter);
