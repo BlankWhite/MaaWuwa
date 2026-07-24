@@ -1,8 +1,8 @@
 {
-    "durationSeconds": 120,
+    "durationSeconds": 300,
     "loopDelayMilliseconds": 80,
-    "noEnemyFramesToFinish": 4,
-    "noEnemyFinishMilliseconds": 1000,
+    "noEnemyFramesToFinish": 6,
+    "noEnemyFinishMilliseconds": 3000,
     "combatEndOcrMinSeconds": 5,
     "lockTargetIntervalMilliseconds": 500,
     "switchIntervalMilliseconds": 6000,

@@ -56,15 +56,70 @@ public sealed class FeixueStrategy : ICharacterStrategy
         }
 
         // 二阶段必须先：条2连段完成 -> 条3满 -> 长按普攻 3s。之后新帧确认 R 亮，才长按 R 3s。
+        // R2 长按输入可能被动画/镜头吞掉；不要立刻清掉 thirdReleased，保留数秒用于二次确认/重试。
         if (context.FeixueSecondForm && context.FeixueThirdForteReleased)
         {
-            if (state.LiberationReady)
+            if (!EnemyRecentlySeen(state, context, TimeSpan.FromMilliseconds(2500)))
             {
-                Console.WriteLine("FeixueStrategy: third forte released and second liberation ready -> hold R 3s");
+                Console.WriteLine("FeixueStrategy: third forte released but no enemy recently -> pause R2 and allow no-enemy finish");
+                return;
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            var attemptedElapsed = context.FeixueSecondLiberationAttemptedAt == default
+                ? TimeSpan.MaxValue
+                : now - context.FeixueSecondLiberationAttemptedAt;
+
+            if (state.LiberationReady
+                && context.FeixueSecondLiberationAttempts < 2
+                && attemptedElapsed >= TimeSpan.FromMilliseconds(1200))
+            {
+                Console.WriteLine($"FeixueStrategy: third forte released and second liberation ready -> hold R 3s (attempt {context.FeixueSecondLiberationAttempts + 1})");
                 await input.HoldAsync(GameKey.Liberation, TimeSpan.FromMilliseconds(3000), cancellationToken).ConfigureAwait(false);
+                context.FeixueSecondLiberationAttempts++;
+                context.FeixueSecondLiberationAttemptedAt = DateTimeOffset.UtcNow;
+                context.NoEnemyFinishSuppressedUntil = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(10);
+                Console.WriteLine("FeixueStrategy: second liberation attempted -> suppress no-enemy finish for 10s");
+                await Task.Delay(300, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            if (context.FeixueSecondLiberationAttempts > 0)
+            {
+                if (state.ConcertoFull
+                    && attemptedElapsed >= TimeSpan.FromMilliseconds(3500)
+                    && state.CurrentSlot > 0
+                    && state.CurrentSlot != 3
+                    && state.Slot3Alive
+                    && !context.IsSlotDisabled(3))
+                {
+                    Console.WriteLine($"FeixueStrategy: second liberation attempted and concerto full -> switch slot 3 Chisa ({attemptedElapsed.TotalMilliseconds:F0}ms)");
+                    await input.PressAsync(GameKey.SwitchCharacter3, cancellationToken).ConfigureAwait(false);
+                    context.RecordSwitchAttempt(3);
+                    context.LastSwitchAt = DateTimeOffset.UtcNow;
+                    context.FeixueSecondForm = false;
+                    context.FeixueSecondForteComboDone = false;
+                    context.FeixueThirdForteReleased = false;
+                    context.FeixueSecondLiberationAttemptedAt = default;
+                    context.FeixueSecondLiberationAttempts = 0;
+                    context.NoEnemyFinishSuppressedUntil = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(5);
+                    await Task.Delay(300, cancellationToken).ConfigureAwait(false);
+                    return;
+                }
+
+                if (attemptedElapsed < TimeSpan.FromSeconds(8))
+                {
+                    Console.WriteLine($"FeixueStrategy: second liberation attempted, keep pending for retry/confirmation ({attemptedElapsed.TotalMilliseconds:F0}ms)");
+                    await QuickNormalAsync(input, cancellationToken, count: 1).ConfigureAwait(false);
+                    return;
+                }
+
+                Console.WriteLine("FeixueStrategy: second liberation pending window ended -> reset second liberation gate");
                 context.FeixueThirdForteReleased = false;
                 context.FeixueSecondForteComboDone = false;
-                await Task.Delay(300, cancellationToken).ConfigureAwait(false);
+                context.FeixueSecondLiberationAttemptedAt = default;
+                context.FeixueSecondLiberationAttempts = 0;
+                await Task.Delay(120, cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -146,6 +201,9 @@ public sealed class FeixueStrategy : ICharacterStrategy
             context.FeixueFirstForteReleased = false;
             context.FeixueSecondForteComboDone = false;
             context.FeixueThirdForteReleased = false;
+            context.FeixueSecondLiberationAttemptedAt = default;
+            context.FeixueSecondLiberationAttempts = 0;
+            context.NoEnemyFinishSuppressedUntil = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(5);
             await Task.Delay(500, cancellationToken).ConfigureAwait(false);
             return;
         }
@@ -181,6 +239,9 @@ public sealed class FeixueStrategy : ICharacterStrategy
             Console.WriteLine("FeixueStrategy: forte3 full -> hold normal attack 3s, then wait second liberation");
             await input.HoldAsync(GameKey.NormalAttack, TimeSpan.FromMilliseconds(3000), cancellationToken).ConfigureAwait(false);
             context.FeixueThirdForteReleased = true;
+            context.FeixueSecondLiberationAttemptedAt = default;
+            context.FeixueSecondLiberationAttempts = 0;
+            context.NoEnemyFinishSuppressedUntil = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(5);
             await Task.Delay(300, cancellationToken).ConfigureAwait(false);
             return;
         }
@@ -219,6 +280,17 @@ public sealed class FeixueStrategy : ICharacterStrategy
         return context.FeixueFirstForteReleased
             || context.FeixueSecondForm
             || context.FeixueThirdForteReleased;
+    }
+
+    private static bool EnemyRecentlySeen(CombatState state, CombatContext context, TimeSpan grace)
+    {
+        if (state.EnemyFound || state.HasTarget)
+        {
+            return true;
+        }
+
+        return context.LastActualEnemySeenAt != default
+            && DateTimeOffset.UtcNow - context.LastActualEnemySeenAt <= grace;
     }
 
     private static async Task QuickNormalAsync(

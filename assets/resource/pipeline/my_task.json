@@ -174,10 +174,10 @@
         "recognition": "TemplateMatch",
         "template": "wuwa_ingame_anchor.png",
         "roi": [
-            1183,
-            54,
-            26,
-            18
+            1140,
+            40,
+            210,
+            50
         ],
         "threshold": 0.65,
         "timeout": 10000,
@@ -190,7 +190,7 @@
             "config": "resource/config/auto_combat.json"
         },
         "rate_limit": 200,
-        "timeout": 180000,
+        "timeout": 360000,
         "next": "RunAutoCombat"
     },
     "ClickWuwaConnectFixed": {

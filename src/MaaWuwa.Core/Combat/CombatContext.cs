@@ -10,6 +10,8 @@ public sealed class CombatContext
 
     public DateTimeOffset LastEnemySeenAt { get; set; }
 
+    public DateTimeOffset LastActualEnemySeenAt { get; set; }
+
     public DateTimeOffset LastSwitchAt { get; set; }
 
     public DateTimeOffset LastLockAttemptAt { get; set; }
@@ -26,6 +28,10 @@ public sealed class CombatContext
 
     public bool FeixueThirdForteReleased { get; set; }
 
+    public DateTimeOffset FeixueSecondLiberationAttemptedAt { get; set; }
+
+    public int FeixueSecondLiberationAttempts { get; set; }
+
     public int FeixueSecondFormBasicAttackCount { get; set; }
 
     public int PendingSwitchTargetSlot { get; set; }
@@ -39,6 +45,8 @@ public sealed class CombatContext
     public DateTimeOffset Slot3DisabledUntil { get; set; }
 
     public int ConsecutiveNoEnemyFrames { get; set; }
+
+    public DateTimeOffset NoEnemyFinishSuppressedUntil { get; set; }
 
     public bool IsSlotDisabled(int slot)
     {

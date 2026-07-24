@@ -58,9 +58,9 @@ public sealed class ChisaStrategy : ICharacterStrategy
 
         if (state.ConcertoFull)
         {
-            Console.WriteLine("ChisaStrategy: concerto full -> switch next");
-            await SwitchNextAsync(state, context, input, cancellationToken).ConfigureAwait(false);
-            return;
+            // 千咲刚由绯雪 R2 满协奏入场时，协奏会保持满值一段时间。
+            // 这里不能立刻按协奏切回绯雪，否则千咲完全没有出手机会。
+            Console.WriteLine("ChisaStrategy: concerto full but no priority action -> keep Chisa on field and attack");
         }
 
         await input.PressAsync(GameKey.NormalAttack, cancellationToken).ConfigureAwait(false);

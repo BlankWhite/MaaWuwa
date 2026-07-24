@@ -44,7 +44,8 @@ dotnet build MaaWuwa.sln -c Release
 Linux 发布 Agent：
 
 ```bash
-dotnet publish src/MaaWuwa.Agent/MaaWuwa.Agent.csproj -c Release -f net10.0 -r linux-x64 --self-contained false -o install/agent
+npm run publish:agent
+# 等价于：dotnet publish src/MaaWuwa.Agent/MaaWuwa.Agent.csproj -c Release -f net10.0 -r linux-x64 --self-contained false
 ```
 
 运行时需要 MaaFramework/MaaAgentBinary 原生库由客户端或 `install/libs/MaaAgentBinary` 提供。

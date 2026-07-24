@@ -93,6 +93,7 @@ public sealed class AutoCombatTickRecognition : IMaaCustomRecognition
             InCombat = true,
             StartedAt = now,
             LastEnemySeenAt = now,
+            LastActualEnemySeenAt = now,
             LastSwitchAt = now
         };
     }
@@ -128,9 +129,16 @@ public sealed class AutoCombatTickRecognition : IMaaCustomRecognition
 
     private static void UpdateEnemyState(CombatContext combatContext, CombatState state)
     {
+        var now = DateTimeOffset.UtcNow;
         if (state.EnemyFound)
         {
-            combatContext.LastEnemySeenAt = DateTimeOffset.UtcNow;
+            combatContext.LastEnemySeenAt = now;
+            combatContext.LastActualEnemySeenAt = now;
+            combatContext.ConsecutiveNoEnemyFrames = 0;
+        }
+        else if (combatContext.NoEnemyFinishSuppressedUntil > now)
+        {
+            combatContext.LastEnemySeenAt = now;
             combatContext.ConsecutiveNoEnemyFrames = 0;
         }
         else
@@ -146,7 +154,13 @@ public sealed class AutoCombatTickRecognition : IMaaCustomRecognition
 
     private static bool ShouldFinish(CombatContext combatContext, AutoCombatOptions options)
     {
-        var noEnemyDuration = DateTimeOffset.UtcNow - combatContext.LastEnemySeenAt;
+        var now = DateTimeOffset.UtcNow;
+        if (combatContext.NoEnemyFinishSuppressedUntil > now)
+        {
+            return false;
+        }
+
+        var noEnemyDuration = now - combatContext.LastEnemySeenAt;
         return combatContext.ConsecutiveNoEnemyFrames >= options.NoEnemyFramesToFinish
             && noEnemyDuration >= TimeSpan.FromMilliseconds(options.NoEnemyFinishMilliseconds);
     }
